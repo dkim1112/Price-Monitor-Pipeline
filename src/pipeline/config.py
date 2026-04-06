@@ -25,11 +25,29 @@ KOSTAT_MAX_DATE_RANGE_DAYS = 30    # API constraint
 KOSTAT_DATA_LAG_DAYS = 14          # typical lag; adaptive logic handles variance
 
 # ── Database ──────────────────────────────────────────────────────────
-DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_PORT = int(os.getenv("DB_PORT", "5432"))
-DB_NAME = os.getenv("DB_NAME", "price_monitor")
-DB_USER = os.getenv("DB_USER", "pipeline")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "pipeline_dev_2026")
+# Try Streamlit secrets first, then environment variables
+try:
+    import streamlit as st
+    if hasattr(st, 'secrets') and 'database' in st.secrets:
+        DB_HOST = st.secrets.database.DB_HOST
+        DB_PORT = int(st.secrets.database.DB_PORT)
+        DB_NAME = st.secrets.database.DB_NAME
+        DB_USER = st.secrets.database.DB_USER
+        DB_PASSWORD = st.secrets.database.DB_PASSWORD
+    else:
+        # Fallback to environment variables
+        DB_HOST = os.getenv("DB_HOST", "localhost")
+        DB_PORT = int(os.getenv("DB_PORT", "5432"))
+        DB_NAME = os.getenv("DB_NAME", "price_monitor")
+        DB_USER = os.getenv("DB_USER", "pipeline")
+        DB_PASSWORD = os.getenv("DB_PASSWORD", "pipeline_dev_2026")
+except ImportError:
+    # Streamlit not available, use environment variables
+    DB_HOST = os.getenv("DB_HOST", "localhost")
+    DB_PORT = int(os.getenv("DB_PORT", "5432"))
+    DB_NAME = os.getenv("DB_NAME", "price_monitor")
+    DB_USER = os.getenv("DB_USER", "pipeline")
+    DB_PASSWORD = os.getenv("DB_PASSWORD", "pipeline_dev_2026")
 
 def get_db_url():
     """SQLAlchemy-style connection URL."""
