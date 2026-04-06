@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: price-monitor-db
+    environment:
+      POSTGRES_DB: price_monitor
+      POSTGRES_USER: pipeline
+      POSTGRES_PASSWORD: pipeline_dev_2026
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./item_mapping_insert.sql:/docker-entrypoint-initdb.d/02-item-mapping.sql
+      - ./db/migration_002_quality.sql:/docker-entrypoint-initdb.d/03-quality.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pipeline -d price_monitor"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Dashboard (optional): docker compose --profile dashboard up
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: price-monitor-dashboard
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    environment:
+      DB_HOST: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - dashboard
+
+volumes:
+  pgdata:
